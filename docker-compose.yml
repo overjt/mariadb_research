@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  dbmaster:
+    image: mariadb:10.7
+    volumes:
+      - ./data/dbmaster:/var/lib/mysql
+      #- ./config/master/create_user.sh:/docker-entrypoint-initdb.d/create_user.sh
+      #- ./config/shared/init_tables.sql:/docker-entrypoint-initdb.d/init_tables.sql
+      - ./config/shared/master_backup.sql:/docker-entrypoint-initdb.d/001_master_backup.sql
+      - ./config/master/my.cnf:/etc/mysql/mariadb.conf.d/my.cnf
+    environment:
+      MARIADB_ROOT_PASSWORD: 'root'
+      MARIADB_DATABASE: 'dbmaster'
+      MARIADB_USER: 'dbmaster'
+      MARIADB_PASSWORD: 'dbmaster'
+      MARIADB_REPLICATION_USER: 'repl'
+      MARIADB_REPLICATION_PASSWORD: 'repl123'
+    ports:
+      - '3306:3306'
+    
+    
+  dbslave1:
+    image: mariadb:10.7
+    volumes:
+      - ./data/dbslave1:/var/lib/mysql
+      - ./config/shared/master_backup.sql:/docker-entrypoint-initdb.d/001_master_backup.sql
+      - ./config/shared/change_master.sh:/docker-entrypoint-initdb.d/002_change_master.sh
+      - ./config/slave1/my.cnf:/etc/mysql/mariadb.conf.d/my.cnf
+    environment:
+      MARIADB_ROOT_PASSWORD: 'root'
+      MARIADB_DATABASE: 'dbslave'
+      MARIADB_USER: 'dbslave'
+      MARIADB_PASSWORD: 'dbslave'
+      MARIADB_REPLICATION_USER: 'repl'
+      MARIADB_REPLICATION_PASSWORD: 'repl123'
+      MARIADB_REPLICATION_MASTER_HOST: 'dbmaster'
+    ports:
+      - '3307:3306'
+    depends_on:
+      - dbmaster
+
+  dbslave2:
+    image: mariadb:10.7
+    volumes:
+      - ./data/dbslave2:/var/lib/mysql
+      - ./config/shared/master_backup.sql:/docker-entrypoint-initdb.d/001_master_backup.sql
+      - ./config/shared/change_master.sh:/docker-entrypoint-initdb.d/002_change_master.sh
+      - ./config/slave2/my.cnf:/etc/mysql/mariadb.conf.d/my.cnf
+    environment:
+      MARIADB_ROOT_PASSWORD: 'root'
+      MARIADB_DATABASE: 'dbslave2'
+      MARIADB_USER: 'dbslave2'
+      MARIADB_PASSWORD: 'dbslave2'
+      MARIADB_REPLICATION_USER: 'repl'
+      MARIADB_REPLICATION_PASSWORD: 'repl123'
+      MARIADB_REPLICATION_MASTER_HOST: 'dbmaster'
+    ports:
+      - '3308:3306'
+    depends_on:
+      - dbmaster
